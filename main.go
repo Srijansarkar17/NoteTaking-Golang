@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -22,6 +23,31 @@ var (
 	nextID = 1
 	mu     sync.Mutex
 )
+
+func createNote(w http.ResponseWriter, r *http.Request) {
+	var input struct { //structure to recieve json from client
+		Title   string
+		Content string
+	}
+	err := json.NewDecoder(r.Body).Decode(&input)
+	if err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+	}
+
+}
+func getNotes(w http.ResponseWriter) {
+	mu.Lock()         //now noone can access the notes
+	defer mu.Unlock() //when the function ends, the notes unlock automatically
+
+	result := make([]Note, 0, len(notes)) //an empty slice of notes, With enough space to hold all notes
+
+	for _, note := range notes { //loop over every note in the notes map and store them in result
+		result = append(result, note)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
+}
 
 // using switch case we are handling both the GET and POST requests together
 // if the call is GET, then we just send all the notes back
