@@ -1,14 +1,30 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"time"
 )
 
+type Notes struct {
+	ID      int
+	Title   string
+	Content string
+}
+
 func notesHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Welcome to Note Taking App")
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+	notes := []Notes{ //making this a list of maps
+		{ID: 1,
+			Title:   "First Notes",
+			Content: "Some description about First Notes"},
+	}
+	w.Header().Set("Content-type", "application/json")
+	json.NewEncoder(w).Encode(notes)
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
