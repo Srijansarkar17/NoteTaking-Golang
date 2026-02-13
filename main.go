@@ -30,9 +30,23 @@ func createNote(w http.ResponseWriter, r *http.Request) {
 		Content string
 	}
 	err := json.NewDecoder(r.Body).Decode(&input)
-	if err != nil {
+	if err != nil { //error handling
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
 	}
+	mu.Lock()
+
+	note := Note{
+		ID:      nextID,
+		Title:   input.Title,
+		Content: input.Content,
+	}
+	notes[nextID] = note //saved in the memory
+	nextID++             //incremented the id
+	mu.Unlock()          //unlocked the mutex, so that others can access now
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(note) //send created note as JSON
 
 }
 func getNotes(w http.ResponseWriter) {
