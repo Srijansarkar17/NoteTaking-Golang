@@ -24,10 +24,11 @@ var (
 	mu     sync.Mutex
 )
 
+// `json:"title"` and `json:"content"` state that go field is Title and Content and JSON key is title and content
 func createNote(w http.ResponseWriter, r *http.Request) {
 	var input struct { //structure to recieve json from client
-		Title   string
-		Content string
+		Title   string `json:"title"`
+		Content string `json:"content"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&input)
 	if err != nil { //error handling
