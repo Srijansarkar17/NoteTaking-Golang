@@ -1,30 +1,42 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 )
 
-type Notes struct {
+type Note struct {
 	ID      int
 	Title   string
 	Content string
 }
 
+// int stores the note-id like notes[1], notes[2] etc.
+// Initializes nextID with value 1 Happens once, when the program starts
+// we create a mutex here, because without it there will be data corruption like if 10 users are hitting /notes at the same time, then the value of id will be corrupted. without mutex race conditions
+var (
+	notes  = make(map[int]Note)
+	nextID = 1
+	mu     sync.Mutex
+)
+
+// using switch case we are handling both the GET and POST requests together
+// if the call is GET, then we just send all the notes back
+// if the call is POST, then we call createNote and read data from request body
 func notesHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	switch r.Method {
+	case http.MethodGet:
+		getNotes(w)
+
+	case http.MethodPost:
+		createNote(w, r)
+
+	default:
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 	}
-	notes := []Notes{ //making this a list of maps
-		{ID: 1,
-			Title:   "First Notes",
-			Content: "Some description about First Notes"},
-	}
-	w.Header().Set("Content-type", "application/json")
-	json.NewEncoder(w).Encode(notes)
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
