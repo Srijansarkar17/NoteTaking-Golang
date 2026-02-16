@@ -74,7 +74,7 @@ func deleteNotesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	delete(notes, id)                   //It removes the key-value pair from the notes map.
-	w.WriteHeader(http.StatusNoContent) //204, the request was successful and nothing to return in the response body
+	w.WriteHeader(http.StatusNoContent) //204, the request was successful and nothing to return in the response body, while deleting we return 204 because while deleting we just return 'done', not any content
 
 }
 func getNotes(w http.ResponseWriter) {
