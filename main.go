@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -50,6 +51,32 @@ func createNote(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(note) //send created note as JSON
 
 }
+
+func deleteNotesHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	idStr := r.URL.Path[len("/delete-notes/"):] //we get the id from the URL, it removes /delete-notes/ and only keeps the id. eg if /notes/3, it only keeps idStr := 3
+	id, err := strconv.Atoi(idStr)              //converting string to integer, if err not there, then we keep the number in id, or else in err
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	_, ok := notes[id] //when we access a map like this in Go, _ stores the value of the note and ok means whether the note exists or not(true/false)
+	if !ok {           //if note does not exist
+		http.Error(w, "Note not found", http.StatusNotFound)
+		return
+	}
+
+	delete(notes, id)                   //It removes the key-value pair from the notes map.
+	w.WriteHeader(http.StatusNoContent) //204, the request was successful and nothing to return in the response body
+
+}
 func getNotes(w http.ResponseWriter) {
 	mu.Lock()         //now noone can access the notes
 	defer mu.Unlock() //when the function ends, the notes unlock automatically
@@ -89,6 +116,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", healthHandler)
 	mux.HandleFunc("/notes", notesHandler)
+	mux.HandleFunc("/delete-notes/", deleteNotesHandler)
 
 	server := &http.Server{
 		Addr:         ":8080",
